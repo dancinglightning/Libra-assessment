@@ -1,7 +1,22 @@
+// services/database.ts
 import sqlite3 from 'sqlite3';
 import config from '../config';
+import path from 'path';
+import fs from 'fs';
 
-const db = new sqlite3.Database(config.database.filename);
+// Define the directory where the database file should be stored
+const dbDirectory = path.resolve(__dirname, '..', 'database');
+
+// Create the directory if it does not exist
+if (!fs.existsSync(dbDirectory)) {
+    fs.mkdirSync(dbDirectory, { recursive: true });
+}
+
+// Resolve an absolute path for the database file in the src/database folder
+const dbPath = path.resolve(dbDirectory, config.database.filename);
+console.log('SQLite DB path:', dbPath);
+
+const db = new sqlite3.Database(dbPath);
 
 db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS tasks (

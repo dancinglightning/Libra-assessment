@@ -1,3 +1,4 @@
+// services/gmailService.ts
 import { google } from 'googleapis';
 import config from '../config';
 
@@ -9,15 +10,55 @@ oAuth2Client.setCredentials({ refresh_token: refreshToken });
 
 const gmail = google.gmail({ version: 'v1', auth: oAuth2Client });
 
+// List of subject keywords to filter out
+const subjectFilters = [
+    'newsletter',
+    'sale',
+    'offer',
+    'promotion',
+    'promo',
+    'discount',
+    'notification',
+    'update',
+    'advertisement',
+    'ad'
+];
+
+// Build the subject filter portion of the query dynamically
+const subjectQuery = subjectFilters.map(word => `-subject:"${word}"`).join(' ');
+
+// Combined query string for listing emails
+const query = `is:unread -category:promotions -category:social -label:SPAM ${subjectQuery}`;
+
 export const listNewEmails = async (): Promise<any[]> => {
-    // Exclude promotions, social, and spam emails.
-    const query = 'is:unread -category:promotions -category:social -label:SPAM';
     const res = await gmail.users.messages.list({ userId: 'me', q: query });
-    return res.data.messages || [];
+    const emails = res.data.messages || [];
+
+    // Fetch detailed metadata for each email (including the Subject header)
+    const detailedEmails = await Promise.all(
+        emails.map(async (email: any) => {
+            const message = await gmail.users.messages.get({
+                userId: 'me',
+                id: email.id,
+                format: 'metadata',
+                metadataHeaders: ['Subject']
+            });
+            return message.data;
+        })
+    );
+
+    // Filter out emails based on subject content using additional heuristics if needed
+    return detailedEmails.filter(email => {
+        const headers = email.payload?.headers || [];
+        const subjectHeader = headers.find((header: any) => header.name.toLowerCase() === 'subject');
+        const subject = subjectHeader?.value?.toLowerCase() || '';
+
+        // Additional filtering can be done here if necessary.
+        return true;
+    });
 };
 
 export const getEmailThread = async (threadId: string): Promise<any> => {
-    // Use 'full' format to get complete message details.
     const res = await gmail.users.threads.get({
         userId: 'me',
         id: threadId,
@@ -36,9 +77,7 @@ export const markEmailAsProcessed = async (messageId: string): Promise<void> => 
     });
 };
 
-// Helper function to extract plain text from a Gmail message.
 export const extractTextFromMessage = (message: any): string => {
-    // Try to decode from message payload parts if available.
     if (message.payload?.parts) {
         for (const part of message.payload.parts) {
             if (part.mimeType === 'text/plain' && part.body?.data) {
@@ -47,6 +86,5 @@ export const extractTextFromMessage = (message: any): string => {
             }
         }
     }
-    // Fallback to snippet.
     return message.snippet || '';
 };

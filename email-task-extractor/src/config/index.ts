@@ -1,3 +1,4 @@
+// ./config/index.ts
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -13,5 +14,10 @@ export default {
     },
     database: {
         filename: process.env.DB_FILENAME || 'database.sqlite'
-    }
+    },
+    redis: {
+        host: process.env.REDIS_HOST || '127.0.0.1',
+        port: Number(process.env.REDIS_PORT) || 6379,
+        password: process.env.REDIS_PASSWORD || undefined,
+    },
 };

@@ -1,0 +1,19 @@
+# Node modules
+node_modules/
+
+# SQLite database file (located in src/database/)
+src/database/*.sqlite
+
+# Log files
+*.log
+
+# Build output (if using a build directory)
+dist/
+
+# TypeScript cache and compiled JavaScript files (if any)
+*.tsbuildinfo
+*.js
+
+# OS-specific files
+.DS_Store
+Thumbs.db

@@ -1,17 +1,14 @@
-export class Queue<T> {
-    private items: T[] = [];
+// services/queueService.ts
+import { Queue } from 'bullmq';
+import IORedis from 'ioredis';
+import config from '../config';
 
-    enqueue(item: T) {
-        this.items.push(item);
-    }
+export const redisConnection = new IORedis({
+    host: config.redis.host,
+    port: config.redis.port,
+    password: config.redis.password,
+    maxRetriesPerRequest: null
+});
 
-    dequeue(): T | undefined {
-        return this.items.shift();
-    }
-
-    isEmpty(): boolean {
-        return this.items.length === 0;
-    }
-}
-
-export const emailQueue = new Queue<any>();
+// Create a persistent Redis-backed queue named "emailQueue"
+export const emailQueue = new Queue('emailQueue', { connection: redisConnection });
